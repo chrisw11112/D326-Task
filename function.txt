@@ -1,0 +1,12 @@
+CREATE OR REPLACE Function get_month(date TIMESTAMP)
+RETURNS TEXT AS $$
+declare
+	month_of_year TEXT;
+BEGIN
+	RETURN CASE 
+		WHEN date is null THEN 'Never Rented'
+		ELSE TO_CHAR(date, 'Month') || ' ' || EXTRACT(YEAR from date)
+	END;
+	RETURN month_of_year;
+END;
+$$ LANGUAGE plpgsql;
