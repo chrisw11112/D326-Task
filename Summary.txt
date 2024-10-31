@@ -1,0 +1,9 @@
+CREATE TABLE Summary AS
+SELECT get_month(r.rental_date) AS last_rental_month, 
+COUNT(*) number_of_movies, 
+AVG(rental_rate::FLOAT) / AVG(replacement_cost::FLOAT) as average_margin_per_rental
+FROM inventory i
+JOIN film f on i.film_id = f.film_id
+LEFT JOIN rental r ON i.inventory_id = r.inventory_id
+GROUP BY TO_CHAR(r.rental_date, 'YYYY-MM'), get_month(r.rental_date)
+ORDER BY TO_CHAR(r.rental_date, 'YYYY-MM')
