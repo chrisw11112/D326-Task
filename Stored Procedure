@@ -1,0 +1,30 @@
+CREATE OR REPLACE PROCEDURE clear_and_insert()
+LANGUAGE plpgsql
+AS $$
+BEGIN
+	TRUNCATE TABLE Detailed;
+	COMMIT;
+	TRUNCATE TABLE Summary;
+	COMMIT;
+	ALTER TABLE Detailed DISABLE TRIGGER recreate_summary_table;
+
+	INSERT INTO Detailed (title, rental_rate, replacement_cost, last_rental_date)
+	SELECT Title, rental_rate, replacement_cost, get_month(rental_date) as last_rental_date
+	FROM inventory i 
+	JOIN film f on i.film_id = f.film_id
+	LEFT JOIN rental r ON i.inventory_id = r.inventory_id;
+ 
+	ALTER TABLE Detailed ENABLE TRIGGER recreate_summary_table;
+
+ 
+	INSERT INTO Summary (last_rental_month, number_of_movies, average_margin_per_rental)
+	SELECT get_month(r.rental_date) AS Last_Rental_Month, 
+	COUNT(*) Number_Of_Movies, 
+	AVG(rental_rate::FLOAT) / AVG(replacement_cost::FLOAT) as Average_Margin_Per_Rental
+	FROM inventory i
+	JOIN film f on i.film_id = f.film_id
+	LEFT JOIN rental r ON i.inventory_id = r.inventory_id
+	GROUP BY TO_CHAR(r.rental_date, 'YYYY-MM'), get_month(r.rental_date)
+	ORDER BY TO_CHAR(r.rental_date, 'YYYY-MM');
+END;
+$$;
