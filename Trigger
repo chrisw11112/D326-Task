@@ -1,0 +1,23 @@
+CREATE OR REPLACE Function update_summary_table()
+RETURNS TRIGGER AS $$
+BEGIN
+	TRUNCATE TABLE Summary;
+	COMMIT;
+
+	INSERT INTO Summary (last_rental_month, number_of_movies, average_margin_per_rental)
+	SELECT get_month(r.rental_date) AS Last_Rental_Month, 
+	COUNT(*) Number_Of_Movies, 
+	AVG(rental_rate::FLOAT) / AVG(replacement_cost::FLOAT) as Average_Margin_Per_Rental
+	FROM inventory i
+	JOIN film f on i.film_id = f.film_id
+	LEFT JOIN rental r ON i.inventory_id = r.inventory_id
+	GROUP BY TO_CHAR(r.rental_date, 'YYYY-MM'), get_month(r.rental_date)
+	ORDER BY TO_CHAR(r.rental_date, 'YYYY-MM');
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER recreate_summary_table
+AFTER INSERT ON Detailed
+FOR EACH ROW
+EXECUTE FUNCTION update_summary_table();
