@@ -1,4 +1,4 @@
-CREATE TABLE Detailed
+CREATE TABLE Detailed AS
 SELECT Title, rental_rate, replacement_cost, get_month(rental_date) as last_rental_date
 FROM inventory i 
 JOIN film f on i.film_id = f.film_id
